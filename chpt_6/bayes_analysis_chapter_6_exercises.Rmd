@@ -1,0 +1,61 @@
+---
+title: "bayes_analysis_chapter_6_exercises"
+author: "Jack_Feds"
+date: "2023-05-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("DBDA2Eprograms/DBDA2E-utilities.R")
+source("DBDA2Eprograms/BernBeta.R")
+```
+
+### Section 6.7 Exercises
+
+### Exercises 1
+
+```{r}
+# Part A
+
+prior = betaABfromModeKappa( mode=0.5 , kappa=8 )
+prior = c(prior$a,prior$b)
+
+openGraph(width=5,height=7)
+
+posterior = BernBeta(priorBetaAB=prior,Data=c(1))
+
+# Part B
+
+posterior = BernBeta(priorBetaAB=posterior,Data=c(1))
+
+# Part C
+BernBeta(priorBetaAB=posterior,Data=c(0))
+
+# Part D
+BernBeta(priorBetaAB=prior,Data=c(0,1,1))
+```
+
+### Exercise 2
+
+```{r}
+# Part A
+prior = c(0,0)
+data = c(rep(1,58),rep(0,100-58))
+BernBeta(prior,data,showHDI = TRUE)
+
+# Part B
+prior = c(0,0)
+data = c(rep(1,58),rep(0,100-58))
+posterior = BernBeta(prior,data,showHDI = TRUE)
+data = c(rep(1,57),rep(0,100-57))
+BernBeta(posterior,data,showHDI=TRUE)
+```
+
+### Exercise 4
+
+```{r}
+prior = c(0.1,0.1)
+data = c(1,1,1,1,0)
+BernBeta(prior,data)
+```

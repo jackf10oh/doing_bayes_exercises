@@ -1,0 +1,139 @@
+---
+title: "bayes_analysis_chapter_9_exercises"
+author: "Jack_Feds"
+date: "2023-05-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+sourceStr <- paste(dirname(getwd()),"/DBDA2Eprograms/DBDA2E-utilities.R",sep="")
+sourceStr2 <- paste(dirname(getwd()),"/DBDA2Eprograms/Jags-Ybinom-XnomSsubjCcat-MbinomBetaOmegaKappa.R",sep="")
+source(sourceStr)
+source(sourceStr2) # no longer source utilities in scripts from text book
+require(rjags)
+require(tidyverse)
+```
+
+```{r}
+#Loading the data
+myData <- read.csv(paste(dirname(getwd()),"/DBDA2Eprograms/BattingAverage.csv",sep=""),stringsAsFactors = TRUE)
+
+#Formatting the data as a list
+Player = myData$Player
+PriPos = myData$PriPos
+Hits = myData$Hits
+AtBats = myData$AtBats
+PlayerNumber = myData$PlayerNumber
+PriPosNumber = myData$PriPosNumber
+Nsubj = length(unique(Player))
+Ncat = length(unique(PriPos))
+
+dataList <- list(
+  c = PriPosNumber,
+  z = Hits,
+  N = AtBats,
+  Nsubj = Nsubj,
+  Ncat = Ncat
+)
+```
+
+```{r}
+#defining model
+modelString <-  "
+  model{
+    
+    #each player's hits have parameter theta for binomial distribution
+    
+    for(subj in 1:Nsubj){
+      z[subj] ~ dbin(theta[subj],N[subj])
+      theta[subj] ~ dbeta(omega[c[subj]]*(kappa[c[subj]]-2)+1, 
+        kappa[c[subj]]-omega[c[subj]]*(kappa[c[subj]]-2)-1)
+      }
+      
+    #each player's theta is drawn from a beta distribution for their position  
+    # the beta distribution is parametrized by mode and spread
+    # the mode is from a beta distribution, the spread is from a gamma distribution
+   
+    for(cat in 1:Ncat){
+      omega[cat] ~ dbeta(omega0*(kappa0-2)+1, 
+        kappa0-omega0*(kappa0-2)-1)
+        
+      kappa[cat] <- kappaMinusTwo[cat] + 2
+      kappaMinusTwo[cat] ~ dgamma(0.01,0.01)
+      }
+    
+    # each position's mode is drawn from a higher level beta distribution
+    # the beta is once again parametrized by mode/spread
+    # mode/spread are again drawn from beta/gamma distributions resprectively
+    
+    omega0 ~ dbeta(1.0,1.0)
+    kappa0 <- kappaMinusTwo0 + 2
+    kappaMinusTwo0 ~ dgamma(0.1,0.1) # mean = 1 , sd=10
+  }
+"
+writeLines( modelString , con="TEMPmodel.txt" )
+```
+
+```{r}
+#Initial parameters list
+thetaInit = rep(NA,Nsubj)
+for(subj in 1:Nsubj){
+  resampledZ = rbinom(1,size=AtBats[subj],prob=Hits[subj]/AtBats[subj])
+  thetaInit[subj] = resampledZ / AtBats[subj]
+}
+thetaInit = 0.001 + 0.998*thetaInit
+
+kappaInit = 100 # let burn in find value of kappa0
+
+initList = list(
+  theta = thetaInit,
+  omega = aggregate(thetaInit,by=list(PriPos),FUN=mean)$x,
+  omega0 = mean(thetaInit),
+  kappaMinusTwo = rep(kappaInit - 2, Ncat),
+  kappaMinusTwo0 = kappaInit - 2
+)
+```
+
+```{r}
+#Running the chains
+parameters = c("theta","omega","kappa","omega0","kappa0")
+adaptSteps = 500
+burnInSteps = 500
+nChains = 3
+
+jagsModel = jags.model(
+  file = "TEMPmodel.txt",
+  data = dataList,
+  inits = initList,
+  n.chains = nChains,
+  n.adapt = adaptSteps
+  )
+
+update(jagsModel, n.iter=burnInSteps)
+codaSamples <- coda.samples(jagsModel,variable.names=parameters,n.iter=3333,thin=1)
+```
+
+```{r}
+plotMCMC(codaSamples = codaSamples,
+         data=myData ,
+         zName="Hits",
+         NName="AtBats",
+         sName="Player",
+         cName="PriPos",
+         compVal=NULL ,
+         
+         diffCList=list( c("Pitcher","Catcher") ,c("Catcher","1st Base") ),
+
+         diffSList=list( c("Kyle Blanks","Bruce Chen") ,
+                         c("Mike Leake","Wandy Rodriguez") ,
+                         c("Andrew McCutchen","Brett Jackson") ,
+                         c("ShinSoo Choo","Ichiro Suzuki") ),
+         
+         compValDiff=0.0)
+```
+
+
+
+
+

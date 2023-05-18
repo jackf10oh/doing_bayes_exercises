@@ -1,0 +1,54 @@
+---
+title: "bayes_analysis_chapter_8_exercises"
+author: "Jack_Feds"
+date: "2023-05-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("rjags")
+source("DBDA2Eprograms/DBDA2E-utilities.R")
+```
+
+
+```{r}
+# A complete example, 8.2
+
+# Optional generic preliminaries:
+graphics.off() # This closes all of R's graphics windows.
+rm(list=ls())  # Careful! This clears all of R's memory!
+source("DBDA2Eprograms/DBDA2E-utilities.R")
+install.packages("rjags")
+require(rjags)       
+
+```
+
+```{r}
+m <- matrix(
+  data=c(
+1,"Reginald",
+0,"Reginald",
+1,"Reginald",
+1,"Reginald",
+1,"Reginald",
+1,"Reginald",
+1,"Reginald",
+0,"Reginald",
+0,"Tony",
+0,"Tony",
+1,"Tony",
+0,"Tony",
+0,"Tony",
+1,"Tony",
+0,"Tony"),
+ncol=2,
+byrow = TRUE
+)
+
+df <- as.data.frame(m)
+names(df) <- c("y","s")
+
+write.csv(df,file="chpt8_example_csv.csv")
+```
+

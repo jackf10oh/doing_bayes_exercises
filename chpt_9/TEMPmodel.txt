@@ -1,0 +1,32 @@
+
+  model{
+    
+    #each player's hits have parameter theta for binomial distribution
+    
+    for(subj in 1:Nsubj){
+      z[subj] ~ dbin(theta[subj],N[subj])
+      theta[subj] ~ dbeta(omega[c[subj]]*(kappa[c[subj]]-2)+1, 
+        kappa[c[subj]]-omega[c[subj]]*(kappa[c[subj]]-2)-1)
+      }
+      
+    #each player's theta is drawn from a beta distribution for their position  
+    # the beta distribution is parametrized by mode and spread
+    # the mode is from a beta distribution, the spread is from a gamma distribution
+   
+    for(cat in 1:Ncat){
+      omega[cat] ~ dbeta(omega0*(kappa0-2)+1, 
+        kappa0-omega0*(kappa0-2)-1)
+        
+      kappa[cat] <- kappaMinusTwo[cat] + 2
+      kappaMinusTwo[cat] ~ dgamma(0.01,0.01)
+      }
+    
+    # each position's mode is drawn from a higher level beta distribution
+    # the beta is once again parametrized by mode/spread
+    # mode/spread are again drawn from beta/gamma distributions resprectively
+    
+    omega0 ~ dbeta(1.0,1.0)
+    kappa0 <- kappaMinusTwo0 + 2
+    kappaMinusTwo0 ~ dgamma(0.1,0.1) # mean = 1 , sd=10
+  }
+

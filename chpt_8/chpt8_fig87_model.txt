@@ -1,0 +1,14 @@
+
+  model{
+  
+    for(i in 1:Ntotal){
+      y[i] ~ dbern(theta[s[i]])
+    }
+    
+    # nested indexing with factor() function
+    for(s in 1:Nsubj){
+      theta[s] ~ dbeta(2,2) # when [i] gets to 12 s[12] is s[2]
+    }
+    
+  }
+
